@@ -30,13 +30,9 @@ COPY . /app
 # Build the application
 RUN mkdir build && cd build && cmake .. && make
 
-# Set default environment variables for the options of the applications. Compile locally and use "./wrapper_api --help" to know all the options.
-ENV LISTEN_IP=0.0.0.0
-ENV LISTEN_PORT=8080
-ENV JOB="stress-ng"
-ENV MaxJOB=5
 # Expose the port the application runs on
-EXPOSE ${LISTEN_PORT}
+EXPOSE 8080
+USER root
 
 # Run the application
-CMD ["./wrapper_api", "--ip", "${LISTEN_IP}", "--port", "${LISTEN_PORT}", "--job", "${JOB}", "-M", "${MaxJOB}"]
+ENTRYPOINT ["./wrapper_api"]

@@ -98,9 +98,9 @@ For a local compilation, to run the program with default option, use the followi
 ./build/wrapper_api
 ```
 
-If you have a docker image, use,
+If you have a docker image use the command below, by specifying the option ```youroptions``` you want at the end for the wrapper,
 ```bash
-docker run -e JOB="stress-ng" -e MAXJOB=5 -e LISTEN_IP=0.0.0.0 -e LISTEN_PORT=8080 -p 8080:8080 yourusername/wrapper-docker
+docker run -p 8080:8080 yourusername/wrapper-docker youroptions
 ```
 if you want to pass your own options to the program. Not all the options are shown, check the program help to get the full list.
 Do not forget to replace ```yourusername``` by your account name in Docker Hub.
@@ -113,6 +113,25 @@ You can check all available options by typing (recommeded before first usage):
 
 ### Example Usage
 The wrapper can be used with commands accessible at the system level (path given in environment variables) or with a local program. The detection is automatic, but if you have two versions, you can use the --prefer-local flag to decide which takes precedence.
+
+Two endpoints are available: ```/run``` and ```/results```. The ```run``` endpoint is for sending jobs. For example, to request the execution of the ```stress-ng``` (the default program, if not the option ```--job``` was not specified when executing the server with ```./wrapper_api```, it may look like this in curl:
+```bash
+curl -X POST http://localhost:8080/run -H "Content-Type: application/json" -d '{"flags": "--cpu 10 --timeout 20s -vm 4"}'
+```
+The -d options provided some flags necessary for ```stress-ng``` to run. The program is supposed to stress the machine for 20s. You may request result at anytime by using,
+```bash
+curl http://localhost:8080/results
+```
+But if you do so before the end of the execution of the program (within the 20s in the example), then you will receive a message specifying that the results are not ready. If you do so after, the result (and potential errors) will be shown and retained as long as a new run command is not sent.
+
+You may send many concurent instructions with successive curl. For example
+```bash
+curl -X POST http://localhost:8080/run -H "Content-Type: application/json" -d '{"flags": "--cpu 10 --timeout 20s -vm 4"}'
+curl -X POST http://localhost:8080/run -H "Content-Type: application/json" -d '{"flags": "--cpu 2 --timeout 60s -vm 4"}'
+```
+The maximum allowed number of run is set in the server application ```wrapper_api``` using the option ```--max-concurrent-jobs```.
+Results are shown in batch. If you send 3 run that have overlaping runtime, these will be listed as [Job 1], [Job 2], [Job 3] with the information for each of them available in one request to the ```/results``` endpoint.
+Once these are all finished and if a new command is sent, the Job counter is reset.
 
 ## Contributing
 No contribution is expected. But feel free to submit issues or pull requests if you find any bugs or have suggestions for improvements.
